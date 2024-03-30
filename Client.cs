@@ -73,8 +73,11 @@ namespace ChatClient
                         {
                             if (receivedMessage.StartsWith("\\disc"))
                             {
+                                Disconnect();
                                 if (onDisconnect != null)
                                     onDisconnect();
+                                if (onReceive != null)
+                                    onReceive("Connection closed by server.");
                             }
                         }
                         else if (onReceive != null)

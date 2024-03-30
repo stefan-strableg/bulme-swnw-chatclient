@@ -33,7 +33,7 @@ namespace ChatClient
             {
                 udpClient.EnableBroadcast = true;
                 udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                udpClient.Client.ReceiveTimeout = 2000;
+                udpClient.Client.ReceiveTimeout = 500;
 
                 byte[] broadcastMessage = Encoding.ASCII.GetBytes("DISCOVER_SERVER");
 
@@ -76,16 +76,23 @@ namespace ChatClient
             }
 
             client.Disconnect();
-            button_send.Enabled = false;
+
+            ReevaluateUI();
+
+            printMessage("Disconnected");
         }
 
         private void Connect()
         {
+            listView_messages.Clear();
+
             if (checkBox_autohost.Checked)
             {
                 Tuple<IPAddress, int> ip = CheckForServer();
                 if (ip == null)
                 {
+                    printMessage("No hosts discovered, starting server...");
+
                     server = new Server(port);
 
                     serverIp = IPAddress.Parse("127.0.0.1");
@@ -123,8 +130,7 @@ namespace ChatClient
 
             client.onReceive = (message) => { lock (listView_messages) { Invoke(new Action<string>(printMessage), message); } };
             client.onDisconnect = () => { Disconnect(); };
-            listView_messages.Clear();
-            printMessage("Connected to " + serverIp.ToString() + ":" + port);
+            printMessage("Connected to " + serverIp.ToString() + ":" + port + ((server != null && server.isRunning) ? " - You are hosting" : ""));
         }
 
 
@@ -182,8 +188,8 @@ namespace ChatClient
 
         private void ReevaluateUI()
         {
-            textBox_ip.Enabled = !checkBox_host.Checked;
-            checkBox_host.Enabled = !checkBox_autohost.Checked;
+            button_send.Enabled = client.isConnected;
+            label_status.Enabled = client.isConnected;
 
             if (!client.isConnected)
                 button_connect.Text = checkBox_autohost.Checked ? "Connect / Host" : (checkBox_host.Checked ? "Host" : "Connect");
